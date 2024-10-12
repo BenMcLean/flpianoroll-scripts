@@ -52,15 +52,16 @@ FLPIANOROLL_SCRIPTS_PATH: str = os.path.join(
 	r"FL Studio\Settings\Piano roll scripts")
 
 for filename in os.listdir(SOURCE_PATH):
-	if filename != 'flpianoroll.py':
-		if filename.endswith('.py'):
-			with open(os.path.join(SOURCE_PATH, filename), 'r') as f:
-				content = f.read()
-			fileDestinationPath: str = os.path.join(FLPIANOROLL_SCRIPTS_PATH, filename.replace('.py', '.pyscript'))
-			with open(fileDestinationPath, 'w') as f:
-				f.write(modify_imports(content))
-			print(f'Deployed \"{filename}\" to \"{fileDestinationPath}\".')
-		else:
-			fileDestinationPath: str = os.path.join(FLPIANOROLL_SCRIPTS_PATH, filename)
-			copy_and_replace(os.path.join(SOURCE_PATH, filename), fileDestinationPath)
-			print(f'Deployed \"{filename}\" to \"{fileDestinationPath}\".')
+	if filename == 'flpianoroll.py':
+		continue
+	elif filename.endswith('.py'):
+		with open(os.path.join(SOURCE_PATH, filename), 'r') as f:
+			content = f.read()
+		fileDestinationPath: str = os.path.join(FLPIANOROLL_SCRIPTS_PATH, filename.replace('.py', '.pyscript'))
+		with open(fileDestinationPath, 'w') as f:
+			f.write(modify_imports(content))
+		print(f'Deployed \"{filename}\" to \"{fileDestinationPath}\".')
+	else:
+		fileDestinationPath: str = os.path.join(FLPIANOROLL_SCRIPTS_PATH, filename)
+		copy_and_replace(os.path.join(SOURCE_PATH, filename), fileDestinationPath)
+		print(f'Deployed \"{filename}\" to \"{fileDestinationPath}\".')
