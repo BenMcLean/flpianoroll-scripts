@@ -1,0 +1,70 @@
+import inspect
+import flpianoroll
+
+def guess_type(name, value):
+	if callable(value):
+		return guess_callable_type(value)
+	elif isinstance(value, bool):
+		return 'bool'
+	elif isinstance(value, int):
+		return 'int'
+	elif isinstance(value, float):
+		return 'float'
+	elif isinstance(value, str):
+		return 'str'
+	elif name.endswith('Count'):
+		return 'int'
+	elif name in ['time', 'length', 'pan', 'velocity', 'release']:
+		return 'float'
+	elif name in ['selected', 'muted', 'slide', 'porta']:
+		return 'bool'
+	else:
+		return 'Any'
+
+def guess_callable_type(value):
+	try:
+		sig = inspect.signature(value)
+		params = [param.annotation if param.annotation != inspect.Parameter.empty else 'Any' for param in sig.parameters.values()]
+		return_anno = sig.return_annotation if sig.return_annotation != inspect.Signature.empty else 'Any'
+		return f"Callable[[{', '.join(params)}], {return_anno}]"
+	except ValueError:
+		# Fall back to generic Callable for built-in methods we can't introspect
+		return "Callable"
+
+def generate_stub():
+	output = []
+	output.append("# This file was auto-generated from FL Studio's flpianoroll module")
+	output.append("from typing import Any, List, Dict, Union, Callable")
+	output.append("\n")
+
+	for name, obj in inspect.getmembers(flpianoroll):
+		if not name.startswith('_'):
+			if inspect.isclass(obj):
+				output.append(f"class {name}:")
+				for attr_name, attr_value in inspect.getmembers(obj):
+					if not attr_name.startswith('_'):
+						if inspect.isfunction(attr_value) or inspect.ismethod(attr_value):
+							sig = inspect.signature(attr_value)
+							params = ", ".join(str(param) for param in sig.parameters.values())
+							output.append(f"    def {attr_name}({params}) -> {guess_type(attr_name, attr_value)}:")
+							output.append("        ...")
+						else:
+							output.append(f"    {attr_name}: {guess_type(attr_name, attr_value)}")
+				output.append("")
+			elif inspect.isfunction(obj):
+				sig = inspect.signature(obj)
+				params = ", ".join(str(param) for param in sig.parameters.values())
+				output.append(f"def {name}({params}) -> {guess_type(name, obj)}:")
+				output.append("    ...")
+				output.append("")
+			else:
+				output.append(f"{name}: {guess_type(name, obj)}")
+				output.append("")
+
+	return "\n".join(output)
+
+def createDialog():
+	stub = generate_stub()
+	with open("flpianoroll.py", "w") as f:
+		f.write(stub)
+	return flpianoroll.ScriptDialog("Generate flpianoroll.py Stub", "flpianoroll.py has been generated.")
